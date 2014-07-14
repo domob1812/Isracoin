@@ -25,6 +25,9 @@ class CTransaction;
 static const unsigned int MAX_SCRIPT_ELEMENT_SIZE = 520; // bytes
 static const unsigned int MAX_OP_RETURN_RELAY = 40;      // bytes
 
+/** Type used for generic data on the stack.  */
+typedef std::vector<unsigned char> vchType;
+
 /** Signature hash types/flags */
 enum
 {
@@ -84,6 +87,7 @@ enum opcodetype
     OP_RESERVED = 0x50,
     OP_1 = 0x51,
     OP_TRUE=OP_1,
+    OP_NAME_REGISTER=OP_1,
     OP_2 = 0x52,
     OP_3 = 0x53,
     OP_4 = 0x54,

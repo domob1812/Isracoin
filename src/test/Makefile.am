@@ -49,6 +49,7 @@ test_isracoin_SOURCES = \
   miner_tests.cpp \
   mruset_tests.cpp \
   multisig_tests.cpp \
+  name_tests.cpp \
   netbase_tests.cpp \
   pmt_tests.cpp \
   rpc_tests.cpp \

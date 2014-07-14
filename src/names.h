@@ -9,12 +9,27 @@
 
 #include <map>
 #include <set>
+#include <string>
 #include <vector>
+
+/* Format of name scripts:
+
+OP_NAME_REGISTER:
+
+  OP_RETURN OP_NAME_REGISTER <name> <script>
+
+  <name> and <script> are vchType values, where <script> is the
+  script corresponding to the name's desired address.
+
+*/
 
 class CLevelDBBatch;
 
 /** Type representing a name internally.  */
-typedef std::vector<unsigned char> CName;
+typedef vchType CName;
+
+/* Construct a name from a string.  */
+CName NameFromString (const std::string& str);
 
 /**
  * Information stored internally for a name.  For now, this is just
@@ -86,5 +101,17 @@ public:
   void WriteBatch (CLevelDBBatch& batch) const;
 
 };
+
+/* Decode a tx output script and see if it is a name operation.  This also
+   checks that the operation is well-formed.  If it looks like a name operation
+   (OP_RETURN OP_NAME_*) but isn't well-formed, it isn't accepted at all
+   (not just ignored).  In that case, fError is set to true.  */
+bool DecodeNameScript (const CScript& script, opcodetype& op, CName& name,
+                       std::vector<vchType>& args, bool& fError);
+
+/* Construct a name registration script.  The passed-in script is
+   overwritten with the constructed one.  */
+void ConstructNameRegistration (CScript& out, const CName& name,
+                                const CNameData& data);
 
 #endif

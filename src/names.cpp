@@ -8,6 +8,15 @@
 
 #include <assert.h>
 
+/* Construct a name from a string.  */
+CName
+NameFromString (const std::string& str)
+{
+  const unsigned char* strPtr;
+  strPtr = reinterpret_cast<const unsigned char*> (str.c_str ());
+  return CName(strPtr, strPtr + str.size ());
+}
+
 /* Try to get a name's associated data.  This looks only
    in entries, and doesn't care about deleted data.  */
 bool
@@ -72,4 +81,77 @@ CNameCache::WriteBatch (CLevelDBBatch& batch) const
   for (std::set<CName>::const_iterator i = deleted.begin ();
        i != deleted.end (); ++i)
     batch.Erase (std::make_pair ('n', *i));
+}
+
+/* Decode a tx output script and see if it is a name operation.  This also
+   checks that the operation is well-formed.  If it looks like a name operation
+   (OP_RETURN OP_NAME_*) but isn't well-formed, it isn't accepted at all
+   (not just ignored).  In that case, fError is set to true.  */
+bool
+DecodeNameScript (const CScript& script, opcodetype& op, CName& name,
+                  std::vector<vchType>& args, bool& fError)
+{
+  CScript::const_iterator pc = script.begin ();
+
+  opcodetype cur;
+  if (!script.GetOp (pc, cur) || cur != OP_RETURN)
+    {
+      fError = false;
+      return false;
+    }
+  if (!script.GetOp (pc, op) || op != OP_NAME_REGISTER)
+    {
+      fError = false;
+      return false;
+    }
+
+  /* Get remaining data as arguments.  The name itself is also taken care of
+     as the first argument.  */
+  bool haveName = false;
+  args.clear ();
+  while (pc != script.end ())
+    {
+      vchType arg;
+      if (!script.GetOp (pc, cur, arg) || cur < 0 || cur > OP_PUSHDATA4)
+        {
+          fError = true;
+          return error ("fetching name script arguments failed");
+        }
+
+      if (haveName)
+        args.push_back (arg);
+      else
+        {
+          name = arg;
+          haveName = true;
+        }
+    }
+
+  if (!haveName)
+    {
+      fError = true;
+      return error ("no name found in name script");
+    }
+
+  /* For now, only OP_NAME_REGISTER is implemented.  Thus verify that the
+     arguments match what they should be.  */
+  if (args.size () != 1)
+    {
+      fError = true;
+      return error ("wrong argument count for OP_NAME_REGISTER");
+    }
+
+  fError = false;
+  return true;
+}
+
+/* Construct a name registration script.  The passed-in script is
+   overwritten with the constructed one.  */
+void
+ConstructNameRegistration (CScript& out, const CName& name,
+                           const CNameData& data)
+{
+  out = CScript();
+  out << OP_RETURN << OP_NAME_REGISTER << name
+      << static_cast<const vchType&> (data.address);
 }
