@@ -4,6 +4,7 @@
 
 #include "base58.h"
 #include "core.h"
+#include "main.h"
 #include "names.h"
 
 #include <boost/test/unit_test.hpp>
@@ -54,6 +55,31 @@ BOOST_AUTO_TEST_CASE (name_script_parsing)
   script << OP_NOP;
   BOOST_CHECK (!DecodeNameScript (script, op, name2, args, error));
   BOOST_CHECK (error);
+}
+
+BOOST_AUTO_TEST_CASE (names_in_block)
+{
+  CBlock block;
+  CValidationState state;
+
+  CNameData data;
+  CBitcoinAddress addr ("i5qPw9kNW6Ce9T2jwMn3vWaRrPWDY8C4G9");
+  BOOST_CHECK (addr.IsValid ());
+  data.address.SetDestination (addr.Get ());
+
+  const CName name = NameFromString ("my-cool-name");
+  CTxOut txo;
+  txo.nValue = COIN;
+  ConstructNameRegistration (txo.scriptPubKey, name, data);
+
+  CTransaction tx;
+  tx.vout.push_back (txo);
+
+  block.vtx.push_back (tx);
+  BOOST_CHECK (CheckNamesInBlock (block, state));
+
+  block.vtx.push_back (tx);
+  BOOST_CHECK (!CheckNamesInBlock (block, state));
 }
 
 BOOST_AUTO_TEST_SUITE_END ()

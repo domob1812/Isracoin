@@ -5,8 +5,7 @@
 #include "names.h"
 
 #include "leveldbwrapper.h"
-
-#include <assert.h>
+#include "main.h"
 
 /* Construct a name from a string.  */
 CName
@@ -15,6 +14,13 @@ NameFromString (const std::string& str)
   const unsigned char* strPtr;
   strPtr = reinterpret_cast<const unsigned char*> (str.c_str ());
   return CName(strPtr, strPtr + str.size ());
+}
+
+/* Convert a name to a string.  */
+std::string
+NameToString (const CName& name)
+{
+  return std::string (name.begin (), name.end ());
 }
 
 /* Try to get a name's associated data.  This looks only
@@ -154,4 +160,38 @@ ConstructNameRegistration (CScript& out, const CName& name,
   out = CScript();
   out << OP_RETURN << OP_NAME_REGISTER << name
       << static_cast<const vchType&> (data.address);
+}
+
+/* "Hook" for basic checking of a block.  This looks through all transactions
+   in it, and verifies that each name is touched at most once by an operation
+   in the block.  This is done as a preparatory step for block validation,
+   before checking the transactions in detail.  */
+bool
+CheckNamesInBlock (const CBlock& block, CValidationState& state)
+{
+  std::set<CName> names;
+  for (std::vector<CTransaction>::const_iterator tx = block.vtx.begin ();
+       tx != block.vtx.end (); ++tx)
+    for (std::vector<CTxOut>::const_iterator out = tx->vout.begin ();
+         out != tx->vout.end (); ++out)
+      {
+        opcodetype op;
+        CName name;
+        std::vector<vchType> args;
+        bool fError;
+
+        /* Note: Actual checking of the transaction is not done here.  So
+           we don't care about fError, and we don't do anything except keeping
+           track of the names that appear.  */
+
+        if (!DecodeNameScript (out->scriptPubKey, op, name, args, fError))
+          continue;
+          
+        if (names.count (name) != 0)
+          return state.Invalid (error ("CheckNamesInBlock: duplicate name '%s'",
+                                       NameToString (name).c_str ()));
+        names.insert (name);
+      }
+
+  return true;
 }

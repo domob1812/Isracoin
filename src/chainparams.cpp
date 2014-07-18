@@ -39,6 +39,8 @@ public:
         nDefaultPort = 21948;
         nRPCPort = 21947;
         bnProofOfWorkLimit = CBigNum(~uint256(0) >> 20);
+        /* TODO: Decide about fork height.  */
+        namesForkHeight = 1000000;
 
         const char* pszTimestamp = "Mar-17-2014 Harvard Scientists: First Direct Evidence of Cosmic Inflation";
         CTransaction txNew;
@@ -126,6 +128,8 @@ public:
         nDefaultPort = 41930;
         nRPCPort = 41929;
         strDataDir = "testnet";
+        /* TODO: Decide about fork height.  */
+        namesForkHeight = 1000000;
 
         // Modify the testnet genesis block so the timestamp is valid for a later start.
         const char* pszTimestamp = "May 13-2014 ynet: Former PM Ehud Olmert jailed for six years for corruption";
@@ -195,6 +199,11 @@ public:
         strDataDir = "regtest";
         //TODO
         //assert(hashGenesisBlock == uint256("0x"));
+
+        /* Fork height for names:  The regtest framework constructs initial
+           chains of height 200.  Use 250 here so that we can test both
+           before and after the fork.  */
+        namesForkHeight = 250;
 
         vSeeds.clear();  // Regtest mode doesn't have any DNS seeds.
         vSeeds.push_back(CDNSSeedData("",""));

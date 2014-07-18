@@ -14,6 +14,7 @@
 #include "checkpoints.h"
 #include "checkqueue.h"
 #include "init.h"
+#include "names.h"
 #include "net.h"
 #include "txdb.h"
 #include "txmempool.h"
@@ -1772,6 +1773,14 @@ bool ConnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex, C
     // Check it again in case a previous version let a bad block in
     if (!CheckBlock(block, state, !fJustCheck, !fJustCheck))
         return false;
+
+    /* Check that no names appear multiple times in an operation
+       in the single block.  This needs the current height (since we only
+       do this check after the softfork), thus it can't be part of
+       the initial CheckBlock routine.  */
+    if (pindex->nHeight >= Params ().GetNamesForkHeight ()
+        && !CheckNamesInBlock (block, state))
+      return error ("CheckBlock: CheckNamesInBlock failed");
 
     // verify that the view's current state corresponds to the previous block
     uint256 hashPrevBlock = pindex->pprev == NULL ? uint256(0) : pindex->pprev->GetBlockHash();

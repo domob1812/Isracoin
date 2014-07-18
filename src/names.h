@@ -12,6 +12,8 @@
 #include <string>
 #include <vector>
 
+class CValidationState;
+
 /* Format of name scripts:
 
 OP_NAME_REGISTER:
@@ -30,6 +32,8 @@ typedef vchType CName;
 
 /* Construct a name from a string.  */
 CName NameFromString (const std::string& str);
+/* Convert a name to a string.  */
+std::string NameToString (const CName& name);
 
 /**
  * Information stored internally for a name.  For now, this is just
@@ -113,5 +117,11 @@ bool DecodeNameScript (const CScript& script, opcodetype& op, CName& name,
    overwritten with the constructed one.  */
 void ConstructNameRegistration (CScript& out, const CName& name,
                                 const CNameData& data);
+
+/* "Hook" for basic checking of a block.  This looks through all transactions
+   in it, and verifies that each name is touched at most once by an operation
+   in the block.  This is done as a preparatory step for block validation,
+   before checking the transactions in detail.  */
+bool CheckNamesInBlock (const CBlock& block, CValidationState& state);
 
 #endif
