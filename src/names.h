@@ -106,12 +106,64 @@ public:
 
 };
 
+/* "Memory pool" for name operations.  This is used by CTxMemPool, and
+   makes sure that for each name, only a single tx operating on it
+   will ever be held in memory.  */
+class CNameMemPool
+{
+
+public:
+
+  /* The names that have pending operations in the mempool.  */
+  std::set<CName> names;
+
+  inline CNameMemPool ()
+    : names()
+  {}
+
+  /* See if a name has already a pending operation.  */
+  inline bool
+  hasName (const CName& name) const
+  {
+    return (names.count (name) != 0);
+  }
+
+  /* Check if a given new transaction conflicts with the names
+     already in here.  */
+  bool checkTransaction (const CTransaction& tx) const;
+
+  /* Add all names appearing in the given tx.  This should only be
+     called after CheckTransaction has already been fine.  */
+  void addTransaction (const CTransaction& tx);
+
+  /* Remove all entries for the given tx.  */
+  void removeTransaction (const CTransaction& tx);
+
+  /* Completely clear.  */
+  inline void
+  clear ()
+  {
+    names.clear ();
+  }
+
+  /* Return number of names in here.  This is used by the sanity checks
+     of CTxMemPool.  */
+  inline unsigned
+  size () const
+  {
+    return names.size ();
+  }
+
+};
+
 /* Decode a tx output script and see if it is a name operation.  This also
    checks that the operation is well-formed.  If it looks like a name operation
    (OP_RETURN OP_NAME_*) but isn't well-formed, it isn't accepted at all
    (not just ignored).  In that case, fError is set to true.  */
 bool DecodeNameScript (const CScript& script, opcodetype& op, CName& name,
                        std::vector<vchType>& args, bool& fError);
+/* See if a given tx output is a name operation.  */
+bool IsNameOperation (const CTxOut& txo, CName& name);
 
 /* Construct a name registration script.  The passed-in script is
    overwritten with the constructed one.  */

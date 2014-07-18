@@ -9,6 +9,7 @@
 
 #include "coins.h"
 #include "core.h"
+#include "names.h"
 #include "sync.h"
 
 /** Fake height value used in CCoins to signify they are only in the memory pool (since 0.8) */
@@ -61,6 +62,7 @@ public:
     mutable CCriticalSection cs;
     std::map<uint256, CTxMemPoolEntry> mapTx;
     std::map<COutPoint, CInPoint> mapNextTx;
+    CNameMemPool names;
 
     CTxMemPool();
 

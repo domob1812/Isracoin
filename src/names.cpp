@@ -23,6 +23,9 @@ NameToString (const CName& name)
   return std::string (name.begin (), name.end ());
 }
 
+/* ************************************************************************** */
+/* CNameCache.  */
+
 /* Try to get a name's associated data.  This looks only
    in entries, and doesn't care about deleted data.  */
 bool
@@ -89,6 +92,62 @@ CNameCache::WriteBatch (CLevelDBBatch& batch) const
     batch.Erase (std::make_pair ('n', *i));
 }
 
+/* ************************************************************************** */
+/* CNameMemPool.  */
+
+/* Check if a given new transaction conflicts with the names
+   already in here.  */
+bool
+CNameMemPool::checkTransaction (const CTransaction& tx) const
+{
+  for (std::vector<CTxOut>::const_iterator out = tx.vout.begin ();
+       out != tx.vout.end (); ++out)
+    {
+      CName name;
+      if (!IsNameOperation (*out, name))
+        continue;
+
+      if (hasName (name))
+        return error ("CNameMemPool: name '%s' has a pending operation",
+                      NameToString (name).c_str ());
+    }
+
+  return true;
+}
+
+/* Add all names appearing in the given tx.  This should only be
+   called after CheckTransaction has already been fine.  */
+void
+CNameMemPool::addTransaction (const CTransaction& tx)
+{
+  for (std::vector<CTxOut>::const_iterator out = tx.vout.begin ();
+       out != tx.vout.end (); ++out)
+    {
+      CName name;
+      if (!IsNameOperation (*out, name))
+        continue;
+
+      names.insert (name);
+    }
+}
+
+/* Remove all entries for the given tx.  */
+void
+CNameMemPool::removeTransaction (const CTransaction& tx)
+{
+  for (std::vector<CTxOut>::const_iterator out = tx.vout.begin ();
+       out != tx.vout.end (); ++out)
+    {
+      CName name;
+      if (!IsNameOperation (*out, name))
+        continue;
+
+      names.erase (name);
+    }
+}
+
+/* ************************************************************************** */
+
 /* Decode a tx output script and see if it is a name operation.  This also
    checks that the operation is well-formed.  If it looks like a name operation
    (OP_RETURN OP_NAME_*) but isn't well-formed, it isn't accepted at all
@@ -151,6 +210,17 @@ DecodeNameScript (const CScript& script, opcodetype& op, CName& name,
   return true;
 }
 
+/* See if a given tx output is a name operation.  */
+bool
+IsNameOperation (const CTxOut& txo, CName& name)
+{
+  opcodetype op;
+  std::vector<vchType> args;
+  bool fError;
+
+  return DecodeNameScript (txo.scriptPubKey, op, name, args, fError);
+}
+
 /* Construct a name registration script.  The passed-in script is
    overwritten with the constructed one.  */
 void
@@ -175,16 +245,13 @@ CheckNamesInBlock (const CBlock& block, CValidationState& state)
     for (std::vector<CTxOut>::const_iterator out = tx->vout.begin ();
          out != tx->vout.end (); ++out)
       {
-        opcodetype op;
         CName name;
-        std::vector<vchType> args;
-        bool fError;
 
         /* Note: Actual checking of the transaction is not done here.  So
            we don't care about fError, and we don't do anything except keeping
            track of the names that appear.  */
 
-        if (!DecodeNameScript (out->scriptPubKey, op, name, args, fError))
+        if (!IsNameOperation (*out, name))
           continue;
           
         if (names.count (name) != 0)

@@ -890,12 +890,18 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
                          hash.ToString(),
                          nFees, CTransaction::nMinRelayTxFee * 10000);
 
+        /* Check that there's not already a pending name operation.  */
+        if (!pool.names.checkTransaction (tx))
+            return error ("AcceptToMemoryPool: already have an operation on"
+                          " the same name");
+
         // Check against previous transactions
         // This is done last to help prevent CPU exhaustion denial-of-service attacks.
         if (!CheckInputs(tx, state, view, true, SCRIPT_VERIFY_P2SH | SCRIPT_VERIFY_STRICTENC))
         {
             return error("AcceptToMemoryPool: : ConnectInputs failed %s", hash.ToString());
         }
+
         // Store transaction in memory
         pool.addUnchecked(hash, entry);
     }
