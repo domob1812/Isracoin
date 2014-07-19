@@ -260,6 +260,9 @@ static const CRPCCommand vRPCCommands[] =
 
     /* Names */
     { "name_getaddress",        &name_getaddress,        true,      false,      false },
+#ifdef ENABLE_WALLET
+    { "sendtoname",             &sendtoname,             false,     false,      true },
+#endif /* ENABLE_WALLET?  */
 
 #ifdef ENABLE_WALLET
     /* Wallet */
