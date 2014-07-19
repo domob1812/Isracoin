@@ -1895,6 +1895,14 @@ bool ConnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex, C
         if (!tx.IsCoinBase())
             blockundo.vtxundo.push_back(txundo);
 
+        /* Update the name database for all name operations found.  */
+        if (considerNames)
+            for (std::vector<CTxOut>::const_iterator out = tx.vout.begin ();
+                 out != tx.vout.end (); ++out)
+            {
+                ApplyNameOperation (*out, view, state);
+            }
+
         vPos.push_back(std::make_pair(block.GetTxHash(i), pos));
         pos.nTxOffset += ::GetSerializeSize(tx, SER_DISK, CLIENT_VERSION);
     }

@@ -292,5 +292,30 @@ CheckNameOperation (const CTxOut& txo, const CCoinsView& coins,
     return state.Invalid (error ("CheckNameOperation: name '%s' exists already",
                                  NameToString (name).c_str ()));
 
+  /* TODO: Check cost of name.  */
+
+  return true;
+}
+
+/* If the tx output is a name operation, apply it to the coin view.  */
+bool
+ApplyNameOperation (const CTxOut& txo, CCoinsView& coins,
+                    CValidationState& state)
+{
+  opcodetype op;
+  CName name;
+  std::vector<vchType> args;
+  bool fError;
+  if (!DecodeNameScript (txo.scriptPubKey, op, name, args, fError))
+    return true;
+
+  /* Currently, only OP_NAME_REGISTER is implemented.  */
+  assert (op == OP_NAME_REGISTER && args.size () == 1);
+
+  CNameData data;
+  data.address = CScript(args[0].begin (), args[0].end ());
+  if (!coins.SetName (name, data))
+    return state.Abort ("ApplyNameOperation: failed to write name");
+
   return true;
 }

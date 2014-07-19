@@ -194,5 +194,8 @@ bool CheckNamesInBlock (const CBlock& block, CValidationState& state);
    chain state in coins into account).  */
 bool CheckNameOperation (const CTxOut& txo, const CCoinsView& coins,
                          CValidationState& state);
+/* If the tx output is a name operation, apply it to the coin view.  */
+bool ApplyNameOperation (const CTxOut& txo, CCoinsView& coins,
+                         CValidationState& state);
 
 #endif

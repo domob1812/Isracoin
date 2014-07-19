@@ -103,4 +103,27 @@ BOOST_AUTO_TEST_CASE (names_database)
   BOOST_CHECK (view.Flush ());
 }
 
+BOOST_AUTO_TEST_CASE (name_operations)
+{
+  CCoinsView dummy;
+  CCoinsViewCache view(dummy);
+
+  const CName name = NameFromString ("database-test-name");
+  CNameData data, data2;
+  CBitcoinAddress addr ("i5qPw9kNW6Ce9T2jwMn3vWaRrPWDY8C4G9");
+  BOOST_CHECK (addr.IsValid ());
+  data.address.SetDestination (addr.Get ());
+
+  CTxOut txo;
+  ConstructNameRegistration (txo.scriptPubKey, name, data);
+  txo.nValue = COIN;
+
+  CValidationState state;
+  BOOST_CHECK (CheckNameOperation (txo, view, state));
+  BOOST_CHECK (ApplyNameOperation (txo, view, state));
+  BOOST_CHECK (view.GetName (name, data2));
+  BOOST_CHECK (data == data2);
+  BOOST_CHECK (!CheckNameOperation (txo, view, state));
+}
+
 BOOST_AUTO_TEST_SUITE_END ()
