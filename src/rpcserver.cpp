@@ -258,6 +258,9 @@ static const CRPCCommand vRPCCommands[] =
     { "createmultisig",         &createmultisig,         true,      true ,      false },
     { "verifymessage",          &verifymessage,          false,     false,      false },
 
+    /* Names */
+    { "name_getaddress",        &name_getaddress,        true,      false,      false },
+
 #ifdef ENABLE_WALLET
     /* Wallet */
     { "getnewaddress",          &getnewaddress,          true,      false,      true },
