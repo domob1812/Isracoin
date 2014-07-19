@@ -897,10 +897,11 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
 
         // Check against previous transactions
         // This is done last to help prevent CPU exhaustion denial-of-service attacks.
-        if (!CheckInputs(tx, state, view, true, SCRIPT_VERIFY_P2SH | SCRIPT_VERIFY_STRICTENC))
-        {
+        const unsigned checkFlags = SCRIPT_VERIFY_P2SH
+                                    | SCRIPT_VERIFY_STRICTENC
+                                    | SCRIPT_VERIFY_NAMES;
+        if (!CheckInputs (tx, state, view, true, checkFlags))
             return error("AcceptToMemoryPool: : ConnectInputs failed %s", hash.ToString());
-        }
 
         // Store transaction in memory
         pool.addUnchecked(hash, entry);
@@ -1649,6 +1650,15 @@ bool CheckInputs(const CTransaction& tx, CValidationState &state, CCoinsViewCach
         }
     }
 
+    /* Check name operations if the flag is set.  */
+    if (flags & SCRIPT_VERIFY_NAMES)
+        for (std::vector<CTxOut>::const_iterator out = tx.vout.begin ();
+             out != tx.vout.end (); ++out)
+        {
+            if (!CheckNameOperation (*out, inputs, state))
+                return error ("CheckInputs: name operation is invalid");
+        }
+
     return true;
 }
 
@@ -1657,6 +1667,8 @@ bool CheckInputs(const CTransaction& tx, CValidationState &state, CCoinsViewCach
 bool DisconnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex, CCoinsViewCache& view, bool* pfClean)
 {
     assert(pindex->GetBlockHash() == view.GetBestBlock());
+
+    /* FIXME: Take care of cleaning up the name registrations!  */
 
     if (pfClean)
         *pfClean = false;
@@ -1784,8 +1796,9 @@ bool ConnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex, C
        in the single block.  This needs the current height (since we only
        do this check after the softfork), thus it can't be part of
        the initial CheckBlock routine.  */
-    if (pindex->nHeight >= Params ().GetNamesForkHeight ()
-        && !CheckNamesInBlock (block, state))
+    const int namesForkHeight = Params ().GetNamesForkHeight ();
+    const bool considerNames = (pindex->nHeight >= namesForkHeight);
+    if (considerNames && !CheckNamesInBlock (block, state))
       return error ("CheckBlock: CheckNamesInBlock failed");
 
     // verify that the view's current state corresponds to the previous block
@@ -1828,6 +1841,8 @@ bool ConnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex, C
 
     unsigned int flags = SCRIPT_VERIFY_NOCACHE |
                          (fStrictPayToScriptHash ? SCRIPT_VERIFY_P2SH : SCRIPT_VERIFY_NONE);
+    if (considerNames)
+        flags |= SCRIPT_VERIFY_NAMES;
 
     CBlockUndo blockundo;
 

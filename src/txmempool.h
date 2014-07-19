@@ -62,6 +62,14 @@ public:
     mutable CCriticalSection cs;
     std::map<uint256, CTxMemPoolEntry> mapTx;
     std::map<COutPoint, CInPoint> mapNextTx;
+
+    /* Keep track of all names that are currently operated on by pending
+       transactions in the mempool.  Alternatively, we could also adapt
+       CCoinsViewMemPool to be a "full" CCoinsView also with respect
+       to names -- but this makes things more complicated.  Just checking
+       that no name appears twice in the mempool and that all name
+       operations are valid with respect to the "actual", DB-backed CCoinsView
+       should be enough for this purpose.  */
     CNameMemPool names;
 
     CTxMemPool();

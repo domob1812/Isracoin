@@ -7,6 +7,8 @@
 #include "leveldbwrapper.h"
 #include "main.h"
 
+#include <assert.h>
+
 /* Construct a name from a string.  */
 CName
 NameFromString (const std::string& str)
@@ -259,6 +261,36 @@ CheckNamesInBlock (const CBlock& block, CValidationState& state)
                                        NameToString (name).c_str ()));
         names.insert (name);
       }
+
+  return true;
+}
+
+/* Check a tx output from the name point-of-view.  If it looks like
+   a name operation, verify that it is valid (taking also the
+   chain state in coins into account).  */
+bool
+CheckNameOperation (const CTxOut& txo, const CCoinsView& coins,
+                    CValidationState& state)
+{
+  opcodetype op;
+  CName name;
+  std::vector<vchType> args;
+  bool fError;
+  if (!DecodeNameScript (txo.scriptPubKey, op, name, args, fError))
+    {
+      if (fError)
+        return state.Invalid (error ("CheckNameOperation: decoding of name"
+                                     " script returned an error flag"));
+      return true;
+    }
+
+  /* Currently, only OP_NAME_REGISTER is implemented.  */
+  assert (op == OP_NAME_REGISTER && args.size () == 1);
+
+  CNameData data;
+  if (coins.GetName (name, data))
+    return state.Invalid (error ("CheckNameOperation: name '%s' exists already",
+                                 NameToString (name).c_str ()));
 
   return true;
 }

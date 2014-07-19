@@ -12,6 +12,7 @@
 #include <string>
 #include <vector>
 
+class CCoinsView;
 class CValidationState;
 
 /* Format of name scripts:
@@ -51,6 +52,18 @@ public:
   (
     READWRITE (address);
   )
+
+  /* Implement == and != operators.  */
+  friend inline bool
+  operator== (const CNameData& a, const CNameData& b)
+  {
+    return (a.address == b.address);
+  }
+  friend inline bool
+  operator!= (const CNameData& a, const CNameData& b)
+  {
+    return !(a == b);
+  }
 
 };
 
@@ -175,5 +188,11 @@ void ConstructNameRegistration (CScript& out, const CName& name,
    in the block.  This is done as a preparatory step for block validation,
    before checking the transactions in detail.  */
 bool CheckNamesInBlock (const CBlock& block, CValidationState& state);
+
+/* Check a tx output from the name point-of-view.  If it looks like
+   a name operation, verify that it is valid (taking also the
+   chain state in coins into account).  */
+bool CheckNameOperation (const CTxOut& txo, const CCoinsView& coins,
+                         CValidationState& state);
 
 #endif
