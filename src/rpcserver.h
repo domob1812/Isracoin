@@ -186,6 +186,7 @@ extern json_spirit::Value gettxout(const json_spirit::Array& params, bool fHelp)
 extern json_spirit::Value verifychain(const json_spirit::Array& params, bool fHelp);
 
 extern json_spirit::Value name_getaddress (const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value name_register (const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value sendtoname (const json_spirit::Array& params, bool fHelp);
 
 #endif

@@ -69,6 +69,8 @@ enum RPCErrorCode
 
     // Name errors
     RPC_NAME_NOT_FOUND              = -100, // Name is not in the database
+    RPC_NAME_NOT_AVAILABLE          = -101, // Name is already taken
+    RPC_NAME_PENDING_OPERATION      = -102, // There is already a pending name operation
 };
 
 //
