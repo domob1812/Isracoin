@@ -53,7 +53,7 @@ bool CCoinsViewDB::SetBestBlock(const uint256 &hashBlock) {
     return db.WriteBatch(batch);
 }
 
-bool CCoinsViewDB::GetName (const CName& name, CNameData& data) {
+bool CCoinsViewDB::GetName (const CName& name, CNameData& data) const {
     return db.Read (std::make_pair ('n', name), data);
 }
 

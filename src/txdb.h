@@ -39,7 +39,7 @@ public:
     bool HaveCoins(const uint256 &txid);
     uint256 GetBestBlock();
     bool SetBestBlock(const uint256 &hashBlock);
-    bool GetName (const CName& name, CNameData& data);
+    bool GetName (const CName& name, CNameData& data) const;
     bool SetName (const CName& name, const CNameData& data);
     bool DeleteName (const CName& name);
     bool BatchWrite(const std::map<uint256, CCoins> &mapCoins, const uint256 &hashBlock, const CNameCache& names);

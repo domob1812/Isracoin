@@ -276,7 +276,7 @@ public:
     virtual bool SetBestBlock(const uint256 &hashBlock);
 
     // Get a name (if it exists)
-    virtual bool GetName (const CName& name, CNameData& data);
+    virtual bool GetName (const CName& name, CNameData& data) const;
     // Set a name (or add it if not exists)
     virtual bool SetName (const CName& name, const CNameData& data);
     // Delete a name.
@@ -307,7 +307,7 @@ public:
     bool HaveCoins(const uint256 &txid);
     uint256 GetBestBlock();
     bool SetBestBlock(const uint256 &hashBlock);
-    bool GetName (const CName& name, CNameData& data);
+    bool GetName (const CName& name, CNameData& data) const;
     bool SetName (const CName& name, const CNameData& data);
     bool DeleteName (const CName& name);
     void SetBackend(CCoinsView &viewIn);
@@ -333,7 +333,7 @@ public:
     bool HaveCoins(const uint256 &txid);
     uint256 GetBestBlock();
     bool SetBestBlock(const uint256 &hashBlock);
-    bool GetName (const CName& name, CNameData& data);
+    bool GetName (const CName& name, CNameData& data) const;
     bool SetName (const CName& name, const CNameData& data);
     bool DeleteName (const CName& name);
     bool BatchWrite(const std::map<uint256, CCoins> &mapCoins, const uint256 &hashBlock, const CNameCache& names);

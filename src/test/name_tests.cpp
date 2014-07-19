@@ -82,4 +82,25 @@ BOOST_AUTO_TEST_CASE (names_in_block)
   BOOST_CHECK (!CheckNamesInBlock (block, state));
 }
 
+BOOST_AUTO_TEST_CASE (names_database)
+{
+  const CName name = NameFromString ("database-test-name");
+  CNameData data, data2;
+  CBitcoinAddress addr ("i5qPw9kNW6Ce9T2jwMn3vWaRrPWDY8C4G9");
+  BOOST_CHECK (addr.IsValid ());
+  data.address.SetDestination (addr.Get ());
+
+  CCoinsViewCache& view = *pcoinsTip;
+
+  BOOST_CHECK (!view.GetName (name, data2));
+  BOOST_CHECK (view.SetName (name, data));
+  BOOST_CHECK (view.GetName (name, data2));
+  BOOST_CHECK (data == data2);
+  BOOST_CHECK (view.Flush ());
+
+  BOOST_CHECK (view.DeleteName (name));
+  BOOST_CHECK (!view.GetName (name, data2));
+  BOOST_CHECK (view.Flush ());
+}
+
 BOOST_AUTO_TEST_SUITE_END ()

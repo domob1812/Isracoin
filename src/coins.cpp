@@ -55,7 +55,7 @@ bool CCoinsView::SetCoins(const uint256 &txid, const CCoins &coins) { return fal
 bool CCoinsView::HaveCoins(const uint256 &txid) { return false; }
 uint256 CCoinsView::GetBestBlock() { return uint256(0); }
 bool CCoinsView::SetBestBlock(const uint256 &hashBlock) { return false; }
-bool CCoinsView::GetName (const CName& name, CNameData& data) { return false; }
+bool CCoinsView::GetName (const CName& name, CNameData& data) const { return false; }
 bool CCoinsView::SetName (const CName& name, const CNameData& data) { return false; }
 bool CCoinsView::DeleteName (const CName& name) { return false; }
 bool CCoinsView::BatchWrite(const std::map<uint256, CCoins> &mapCoins, const uint256 &hashBlock, const CNameCache& names) { return false; }
@@ -68,7 +68,7 @@ bool CCoinsViewBacked::SetCoins(const uint256 &txid, const CCoins &coins) { retu
 bool CCoinsViewBacked::HaveCoins(const uint256 &txid) { return base->HaveCoins(txid); }
 uint256 CCoinsViewBacked::GetBestBlock() { return base->GetBestBlock(); }
 bool CCoinsViewBacked::SetBestBlock(const uint256 &hashBlock) { return base->SetBestBlock(hashBlock); }
-bool CCoinsViewBacked::GetName (const CName& name, CNameData& data) { return base->GetName (name, data); }
+bool CCoinsViewBacked::GetName (const CName& name, CNameData& data) const { return base->GetName (name, data); }
 bool CCoinsViewBacked::SetName (const CName& name, const CNameData& data) { return base->SetName (name, data); }
 bool CCoinsViewBacked::DeleteName (const CName& name) { return base->DeleteName (name); }
 void CCoinsViewBacked::SetBackend(CCoinsView &viewIn) { base = &viewIn; }
@@ -127,7 +127,7 @@ bool CCoinsViewCache::SetBestBlock(const uint256 &hashBlockIn) {
     return true;
 }
 
-bool CCoinsViewCache::GetName (const CName& name, CNameData& data) {
+bool CCoinsViewCache::GetName (const CName& name, CNameData& data) const {
     if (cacheNames.IsDeleted (name))
         return false;
     if (cacheNames.Get (name, data))
