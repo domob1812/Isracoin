@@ -7,6 +7,8 @@
 #include "core.h"
 #include "serialize.h"
 
+#include <stdint.h>
+
 #include <map>
 #include <set>
 #include <string>
@@ -35,6 +37,9 @@ typedef vchType CName;
 CName NameFromString (const std::string& str);
 /* Convert a name to a string.  */
 std::string NameToString (const CName& name);
+
+/* Return the required (minimum) cost of a name registration.  */
+int64_t GetNameCost (const CName& name);
 
 /**
  * Information stored internally for a name.  For now, this is just

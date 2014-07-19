@@ -69,7 +69,7 @@ BOOST_AUTO_TEST_CASE (names_in_block)
 
   const CName name = NameFromString ("my-cool-name");
   CTxOut txo;
-  txo.nValue = COIN;
+  txo.nValue = GetNameCost (name);
   ConstructNameRegistration (txo.scriptPubKey, name, data);
 
   CTransaction tx;
@@ -114,11 +114,14 @@ BOOST_AUTO_TEST_CASE (name_operations)
   BOOST_CHECK (addr.IsValid ());
   data.address.SetDestination (addr.Get ());
 
+  CValidationState state;
   CTxOut txo;
   ConstructNameRegistration (txo.scriptPubKey, name, data);
-  txo.nValue = COIN;
 
-  CValidationState state;
+  txo.nValue = GetNameCost (name) - 1;
+  BOOST_CHECK (!CheckNameOperation (txo, view, state));
+
+  txo.nValue = GetNameCost (name);
   BOOST_CHECK (CheckNameOperation (txo, view, state));
   BOOST_CHECK (ApplyNameOperation (txo, view, state));
   BOOST_CHECK (view.GetName (name, data2));

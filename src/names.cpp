@@ -6,6 +6,7 @@
 
 #include "leveldbwrapper.h"
 #include "main.h"
+#include "util.h"
 
 #include <assert.h>
 
@@ -23,6 +24,14 @@ std::string
 NameToString (const CName& name)
 {
   return std::string (name.begin (), name.end ());
+}
+
+/* Return the required (minimum) cost of a name registration.  */
+int64_t
+GetNameCost (const CName& name)
+{
+  /* TODO: Decide about actual cost.  */
+  return COIN;
 }
 
 /* ************************************************************************** */
@@ -292,7 +301,10 @@ CheckNameOperation (const CTxOut& txo, const CCoinsView& coins,
     return state.Invalid (error ("CheckNameOperation: name '%s' exists already",
                                  NameToString (name).c_str ()));
 
-  /* TODO: Check cost of name.  */
+  if (txo.nValue < GetNameCost (name))
+    return state.Invalid (error ("CheckNameOperation: not enough coins paid"
+                                 " for '%s'",
+                                 NameToString (name).c_str ()));
 
   return true;
 }
