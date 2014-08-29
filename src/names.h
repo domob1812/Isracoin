@@ -33,12 +33,12 @@ class CLevelDBBatch;
 /** Type representing a name internally.  */
 typedef vchType CName;
 
-/* Construct a name from a string.  */
+/** Construct a name from a string.  */
 CName NameFromString (const std::string& str);
-/* Convert a name to a string.  */
+/** Convert a name to a string.  */
 std::string NameToString (const CName& name);
 
-/* Return the required (minimum) cost of a name registration.  */
+/** Return the required (minimum) cost of a name registration.  */
 int64_t GetNameCost (const CName& name);
 
 /**
@@ -124,9 +124,51 @@ public:
 
 };
 
-/* "Memory pool" for name operations.  This is used by CTxMemPool, and
-   makes sure that for each name, only a single tx operating on it
-   will ever be held in memory.  */
+/**
+ * Undo object for name operations in a block.
+ */
+class CNameUndo
+{
+
+public:
+
+  /**
+   * Name registrations that have to be undone.  These names are simply
+   * removed from the database when performing the undo.
+   */
+  std::set<CName> registrations;
+
+  IMPLEMENT_SERIALIZE
+  (
+    /* For future extensions (changing of names), we store also
+       a "format version".  */
+    int nFormat = 1;
+    READWRITE (nFormat);
+    assert (nFormat == 1);
+
+    READWRITE (registrations);
+  )
+
+  /* Check if this object is "empty".  This is enforced when writing
+     the undo information before the hardfork point (so that we ensure
+     that no information is lost by *not* actually writing the object
+     before that).  */
+  inline bool
+  IsNull () const
+  {
+    return registrations.empty ();
+  }
+
+  /* Undo everything in here on the given coins view.  */
+  bool applyUndo (CCoinsView& view) const;
+
+};
+
+/**
+ * "Memory pool" for name operations.  This is used by CTxMemPool, and
+ * makes sure that for each name, only a single tx operating on it
+ * will ever be held in memory.
+ */
 class CNameMemPool
 {
 
@@ -199,8 +241,9 @@ bool CheckNamesInBlock (const CBlock& block, CValidationState& state);
    chain state in coins into account).  */
 bool CheckNameOperation (const CTxOut& txo, const CCoinsView& coins,
                          CValidationState& state);
-/* If the tx output is a name operation, apply it to the coin view.  */
-bool ApplyNameOperation (const CTxOut& txo, CCoinsView& coins,
+/* If the tx output is a name operation, apply it to the coin view.  This also
+   fills in the appropriate undo information.  */
+bool ApplyNameOperation (const CTxOut& txo, CCoinsView& coins, CNameUndo& undo,
                          CValidationState& state);
 
 #endif

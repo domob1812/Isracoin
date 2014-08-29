@@ -14,7 +14,6 @@
 #include "checkpoints.h"
 #include "checkqueue.h"
 #include "init.h"
-#include "names.h"
 #include "net.h"
 #include "txdb.h"
 #include "txmempool.h"
@@ -324,6 +323,17 @@ CBlockIndex *CChain::FindFork(const CBlockLocator &locator) const {
 
 CCoinsViewCache *pcoinsTip = NULL;
 CBlockTreeDB *pblocktree = NULL;
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// CBlockUndo
+//
+
+CBlockUndo::CBlockUndo (const CBlockIndex* pindex)
+  : vtxundo(), names()
+{
+  supportsNames = (pindex->nHeight >= Params ().GetNamesForkHeight ());
+}
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -1668,14 +1678,12 @@ bool DisconnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex
 {
     assert(pindex->GetBlockHash() == view.GetBestBlock());
 
-    /* FIXME: Take care of cleaning up the name registrations!  */
-
     if (pfClean)
         *pfClean = false;
 
     bool fClean = true;
 
-    CBlockUndo blockUndo;
+    CBlockUndo blockUndo(pindex);
     CDiskBlockPos pos = pindex->GetUndoPos();
     if (pos.IsNull())
         return error("DisconnectBlock() : no undo data available");
@@ -1742,6 +1750,10 @@ bool DisconnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex
             }
         }
     }
+
+    /* Undo name operations.  */
+    if (!blockUndo.names.applyUndo (view))
+        return error ("DisconnectBlock: failed to undo name operations");
 
     // move best block pointer to prevout block
     view.SetBestBlock(pindex->pprev->GetBlockHash());
@@ -1844,7 +1856,7 @@ bool ConnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex, C
     if (considerNames)
         flags |= SCRIPT_VERIFY_NAMES;
 
-    CBlockUndo blockundo;
+    CBlockUndo blockundo(pindex);
 
     CCheckQueueControl<CScriptCheck> control(fScriptChecks && nScriptCheckThreads ? &scriptcheckqueue : NULL);
 
@@ -1900,7 +1912,7 @@ bool ConnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex, C
             for (std::vector<CTxOut>::const_iterator out = tx.vout.begin ();
                  out != tx.vout.end (); ++out)
             {
-                ApplyNameOperation (*out, view, state);
+                ApplyNameOperation (*out, view, blockundo.names, state);
             }
 
         vPos.push_back(std::make_pair(block.GetTxHash(i), pos));
@@ -2987,7 +2999,7 @@ bool VerifyDB(int nCheckLevel, int nCheckDepth)
             return error("VerifyDB() : *** found bad block at %d, hash=%s\n", pindex->nHeight, pindex->GetBlockHash().ToString());
         // check level 2: verify undo validity
         if (nCheckLevel >= 2 && pindex) {
-            CBlockUndo undo;
+            CBlockUndo undo(pindex);
             CDiskBlockPos pos = pindex->GetUndoPos();
             if (!pos.IsNull()) {
                 if (!undo.ReadFromDisk(pos, pindex->pprev->GetBlockHash()))

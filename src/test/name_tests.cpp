@@ -107,6 +107,7 @@ BOOST_AUTO_TEST_CASE (name_operations)
 {
   CCoinsView dummy;
   CCoinsViewCache view(dummy);
+  CNameUndo undo;
 
   const CName name = NameFromString ("database-test-name");
   CNameData data, data2;
@@ -120,13 +121,19 @@ BOOST_AUTO_TEST_CASE (name_operations)
 
   txo.nValue = GetNameCost (name) - 1;
   BOOST_CHECK (!CheckNameOperation (txo, view, state));
+  BOOST_CHECK (undo.IsNull ());
 
   txo.nValue = GetNameCost (name);
   BOOST_CHECK (CheckNameOperation (txo, view, state));
-  BOOST_CHECK (ApplyNameOperation (txo, view, state));
+  BOOST_CHECK (ApplyNameOperation (txo, view, undo, state));
+  BOOST_CHECK (!undo.IsNull ());
+
   BOOST_CHECK (view.GetName (name, data2));
   BOOST_CHECK (data == data2);
   BOOST_CHECK (!CheckNameOperation (txo, view, state));
+
+  undo.applyUndo (view);
+  BOOST_CHECK (CheckNameOperation (txo, view, state));
 }
 
 BOOST_AUTO_TEST_SUITE_END ()

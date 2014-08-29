@@ -104,6 +104,22 @@ CNameCache::WriteBatch (CLevelDBBatch& batch) const
 }
 
 /* ************************************************************************** */
+/* CNameUndo.  */
+
+/* Undo everything in here on the given coins view.  */
+bool
+CNameUndo::applyUndo (CCoinsView& view) const
+{
+  for (std::set<CName>::const_iterator i = registrations.begin ();
+       i != registrations.end (); ++i)
+    if (!view.DeleteName (*i))
+      return error ("CNameUndo::applyUndo: failed to delete name '%s'",
+                    NameToString (*i).c_str ());
+
+  return true;
+}
+
+/* ************************************************************************** */
 /* CNameMemPool.  */
 
 /* Check if a given new transaction conflicts with the names
@@ -311,7 +327,7 @@ CheckNameOperation (const CTxOut& txo, const CCoinsView& coins,
 
 /* If the tx output is a name operation, apply it to the coin view.  */
 bool
-ApplyNameOperation (const CTxOut& txo, CCoinsView& coins,
+ApplyNameOperation (const CTxOut& txo, CCoinsView& coins, CNameUndo& undo,
                     CValidationState& state)
 {
   opcodetype op;
@@ -328,6 +344,8 @@ ApplyNameOperation (const CTxOut& txo, CCoinsView& coins,
   data.address = CScript(args[0].begin (), args[0].end ());
   if (!coins.SetName (name, data))
     return state.Abort ("ApplyNameOperation: failed to write name");
+
+  undo.registrations.insert (name);
 
   return true;
 }
