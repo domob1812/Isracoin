@@ -109,6 +109,9 @@ BOOST_AUTO_TEST_CASE (name_operations)
   CCoinsViewCache view(dummy);
   CNameUndo undo;
 
+  const CName nameInvalid = NameFromString ("ab");
+  BOOST_CHECK (GetNameCost (nameInvalid) == -1);
+
   const CName name = NameFromString ("database-test-name");
   CNameData data, data2;
   CBitcoinAddress addr("i5qPw9kNW6Ce9T2jwMn3vWaRrPWDY8C4G9");

@@ -30,8 +30,34 @@ NameToString (const CName& name)
 int64_t
 GetNameCost (const CName& name)
 {
-  /* TODO: Decide about actual cost.  */
-  return COIN;
+  const vchType::size_type len = name.size ();
+
+  /* Three is minimum length of names.  */
+  if (len < 3)
+    return -1;
+
+  /* The cost depends "exponentially" on the name length.  */
+  switch (len)
+    {
+    case 3:
+      return 100000 * COIN;
+
+    case 4:
+      return 10000 * COIN;
+
+    case 5:
+      return 100 * COIN;
+
+    case 6:
+    case 7:
+      return 10 * COIN;
+
+    default:
+      assert (len > 7);
+      return 5 * COIN;
+    }
+
+  assert (false);
 }
 
 /* ************************************************************************** */
@@ -317,6 +343,12 @@ CheckNameOperation (const CTxOut& txo, const CCoinsView& coins,
     return state.Invalid (error ("CheckNameOperation: name '%s' exists already",
                                  NameToString (name).c_str ()));
 
+  const int64_t cost = GetNameCost (name);
+  if (cost == -1)
+    return state.Invalid (error ("CheckNameOperation: name '%s' is invalid",
+                                 NameToString (name).c_str ()));
+
+  assert (cost >= 0);
   if (txo.nValue < GetNameCost (name))
     return state.Invalid (error ("CheckNameOperation: not enough coins paid"
                                  " for '%s'",

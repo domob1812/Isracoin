@@ -38,7 +38,10 @@ CName NameFromString (const std::string& str);
 /** Convert a name to a string.  */
 std::string NameToString (const CName& name);
 
-/** Return the required (minimum) cost of a name registration.  */
+/**
+ * Return the required (minimum) cost of a name registration.  It may return
+ * -1 to signify that the name is not allowed to be registered at all.
+ */
 int64_t GetNameCost (const CName& name);
 
 /**

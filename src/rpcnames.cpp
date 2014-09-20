@@ -107,6 +107,10 @@ name_register (const json_spirit::Array& params, bool fHelp)
   /* Build up the final transaction and send it.  */
 
   const int64_t nAmount = GetNameCost (name);
+  if (nAmount == -1)
+    throw JSONRPCError(RPC_NAME_INVALID, "this name is not allowed");
+
+  assert (nAmount >= 0);
   CScript script;
   ConstructNameRegistration (script, name, data);
 
